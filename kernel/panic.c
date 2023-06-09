@@ -204,7 +204,6 @@ void nmi_panic(struct pt_regs *regs, const char *msg)
 }
 EXPORT_SYMBOL(nmi_panic);
 
-<<<<<<< HEAD
 #ifdef OPLUS_FEATURE_PERFORMANCE
 extern int panic_flush_device_cache(int timeout);
 extern unsigned int get_eng_version(void);
@@ -217,7 +216,7 @@ void flush_cache_on_panic(void){
     }
 }
 #endif  /*OPLUS_FEATURE_PERFORMANCE*/
-=======
+
 void check_panic_on_warn(const char *origin)
 {
 	unsigned int limit;
@@ -230,7 +229,6 @@ void check_panic_on_warn(const char *origin)
 		panic("%s: system warned too often (kernel.warn_limit is %d)",
 		      origin, limit);
 }
->>>>>>> upstream/android-4.14-stable
 
 /**
  *	panic - halt the system
