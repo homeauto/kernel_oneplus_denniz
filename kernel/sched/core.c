@@ -1978,12 +1978,6 @@ static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
 {
-
-	if (task_on_rq_migrating(p))
-		flags |= ENQUEUE_MIGRATED;
-
-	if (task_contributes_to_load(p))
-		rq->nr_uninterruptible--;
 	enqueue_task(rq, p, flags);
 }
 
@@ -4678,7 +4672,8 @@ static noinline void __schedule_bug(struct task_struct *prev)
 		dump_preempt_disable_ips(current);
 		pr_cont("\n");
 	}
-	check_panic_on_warn("scheduling while atomic");
+	if (panic_on_warn)
+		panic("scheduling while atomic\n");
 
 	dump_stack();
 	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
@@ -5101,6 +5096,7 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
 	if (likely(!preemptible()))
 		return;
 
+
 	do {
 		/*
 		 * Because the function tracer can trace preempt_count_sub()
@@ -5117,15 +5113,7 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
 		 */
 		preempt_disable_notrace();
 		preempt_latency_start(1);
-		/*
-		 * Needs preempt disabled in case user_exit() is traced
-		 * and the tracer calls preempt_enable_notrace() causing
-		 * an infinite recursion.
-		 */
-		prev_ctx = exception_enter();
 		__schedule(true);
-		exception_exit(prev_ctx);
-
 		preempt_latency_stop(1);
 		preempt_enable_no_resched_notrace();
 	} while (need_resched());
@@ -6390,14 +6378,14 @@ SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid, unsigned int, len,
 	if (len & (sizeof(unsigned long)-1))
 		return -EINVAL;
 
-	if (!zalloc_cpumask_var(&mask, GFP_KERNEL))
+	if (!alloc_cpumask_var(&mask, GFP_KERNEL))
 		return -ENOMEM;
 
 	ret = sched_getaffinity(pid, mask);
 	if (ret == 0) {
 		size_t retlen = min_t(size_t, len, cpumask_size());
 
-		if (copy_to_user(user_mask_ptr, cpumask_bits(mask), retlen))
+		if (copy_to_user(user_mask_ptr, mask, retlen))
 			ret = -EFAULT;
 		else
 			ret = retlen;
